@@ -8,7 +8,8 @@ function Staff({ addToast }) {
   const [formData, setFormData] = useState({
     fullName: '',
     salary: '',
-    joiningDate: ''
+    joiningDate: '',
+    password: ''
   });
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,6 +18,10 @@ function Staff({ addToast }) {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [editPasswordConfirm, setEditPasswordConfirm] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   // Fetch staff data on component mount
   useEffect(() => {
@@ -49,6 +54,7 @@ function Staff({ addToast }) {
         fullName: formData.fullName,
         salary: formData.salary || null,
         joiningDate: formData.joiningDate || null,
+        password: formData.password,
       };
 
       console.log('DEBUG: Submit data:', submitData);
@@ -66,7 +72,8 @@ function Staff({ addToast }) {
         setFormData({
           fullName: '',
           salary: '',
-          joiningDate: ''
+          joiningDate: '',
+          password: ''
         });
         // Refresh the staff list
         fetchStaff();
@@ -99,6 +106,39 @@ function Staff({ addToast }) {
       addToast('Error deleting staff member', 'error');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleUpdatePassword = async (staffId) => {
+    if (!newPassword || newPassword.length < 6) {
+      addToast('Password must be at least 6 characters long', 'error');
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BASE_API}/api/staff/${staffId}/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password: newPassword }),
+      });
+
+      if (response.ok) {
+        addToast('Password updated successfully!', 'success');
+        setEditPasswordConfirm(null);
+        setNewPassword('');
+        // Refresh the staff list
+        fetchStaff();
+      } else {
+        const data = await response.json();
+        addToast(data.error || 'Failed to update password', 'error');
+      }
+    } catch (error) {
+      addToast('Error updating password', 'error');
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -208,6 +248,21 @@ function Staff({ addToast }) {
               />
             </div>
 
+            <div className="form-group">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="Enter password (minimum 6 characters)"
+                required
+                disabled={isSubmitting}
+                minLength="6"
+              />
+            </div>
+
             <button type="submit" className="submit-btn" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
@@ -287,6 +342,14 @@ function Staff({ addToast }) {
                   </div>
                   <div className="staff-actions">
                     <button
+                      className="edit-btn"
+                      onClick={() => setEditPasswordConfirm(staff.id)}
+                      title="Edit password"
+                      style={{ marginRight: '8px' }}
+                    >
+                      🔑 Edit Password
+                    </button>
+                    <button
                       className="delete-btn"
                       onClick={() => setDeleteConfirm(staff.id)}
                       title="Delete staff member"
@@ -324,6 +387,79 @@ function Staff({ addToast }) {
           </div>
         )}
 
+        {/* Edit Password Modal */}
+        {editPasswordConfirm && (
+          <div className="delete-confirm-overlay">
+            <div className="delete-confirm-dialog">
+              <h3>Edit Password</h3>
+              <p>Enter the new password for this staff member:</p>
+              <div className="form-group">
+                <label htmlFor="newPassword">New Password</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="newPassword"
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password (minimum 6 characters)"
+                    minLength="6"
+                    required
+                    disabled={isUpdatingPassword}
+                    style={{
+                      marginBottom: '15px',
+                      paddingRight: '45px'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      color: '#7f8c8d',
+                      padding: '0',
+                      width: '20px',
+                      height: '20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    disabled={isUpdatingPassword}
+                  >
+                    {showNewPassword ? '🙈' : '👁️'}
+                  </button>
+                </div>
+              </div>
+              <div className="delete-confirm-actions">
+                <button
+                  className="cancel-btn"
+                  onClick={() => {
+                    setEditPasswordConfirm(null);
+                    setNewPassword('');
+                    setShowNewPassword(false);
+                  }}
+                  disabled={isUpdatingPassword}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="confirm-delete-btn"
+                  onClick={() => handleUpdatePassword(editPasswordConfirm)}
+                  disabled={isUpdatingPassword || !newPassword || newPassword.length < 6}
+                >
+                  {isUpdatingPassword ? 'Updating...' : 'Update Password'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Full Screen Loader for Staff Addition */}
         {isSubmitting && (
           <div className="fullscreen-loader">
@@ -333,6 +469,13 @@ function Staff({ addToast }) {
 
         {/* Full Screen Loader for Staff Deletion */}
         {isDeleting && (
+          <div className="fullscreen-loader">
+            <span className="loader"></span>
+          </div>
+        )}
+
+        {/* Full Screen Loader for Password Update */}
+        {isUpdatingPassword && (
           <div className="fullscreen-loader">
             <span className="loader"></span>
           </div>

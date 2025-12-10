@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import '../App.css';
 
@@ -6,6 +6,13 @@ function Navbar({ addToast }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [userRole, setUserRole] = useState('admin');
+
+  // Get user role from localStorage
+  useEffect(() => {
+    const role = localStorage.getItem('userRole') || 'admin';
+    setUserRole(role);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -44,28 +51,38 @@ function Navbar({ addToast }) {
            <Link to="/customer" className={`navbar-link ${location.pathname === '/customer' ? 'active' : ''}`} onClick={closeDropdown}>
              Add Customer
            </Link>
-           <Link to="/staff" className={`navbar-link ${location.pathname === '/staff' ? 'active' : ''}`} onClick={closeDropdown}>
-             Add Staff
-           </Link>
-           <Link to="/salary-update" className={`navbar-link ${location.pathname === '/salary-update' ? 'active' : ''}`} onClick={closeDropdown}>
-             Salary Update
-           </Link>
+           {userRole === 'admin' && (
+             <Link to="/staff" className={`navbar-link ${location.pathname === '/staff' ? 'active' : ''}`} onClick={closeDropdown}>
+               Add Staff
+             </Link>
+           )}
+           {userRole === 'admin' && (
+             <Link to="/salary-update" className={`navbar-link ${location.pathname === '/salary-update' ? 'active' : ''}`} onClick={closeDropdown}>
+               Salary Update
+             </Link>
+           )}
            <Link to="/revenue" className={`navbar-link ${location.pathname === '/revenue' ? 'active' : ''}`} onClick={closeDropdown}>
              Customer Entry
            </Link>
-           <Link to="/expense" className={`navbar-link ${location.pathname === '/expense' ? 'active' : ''}`} onClick={closeDropdown}>
-             Expense Entry
-           </Link>
-           <Link to="/expense-summary" className={`navbar-link ${location.pathname === '/expense-summary' ? 'active' : ''}`} onClick={closeDropdown}>
-             Expense Summary
-           </Link>
-           <Link to="/change-password" className={`navbar-link ${location.pathname === '/change-password' ? 'active' : ''}`} onClick={closeDropdown}>
-             Change Password
-           </Link>
+           {userRole === 'admin' && (
+             <Link to="/expense" className={`navbar-link ${location.pathname === '/expense' ? 'active' : ''}`} onClick={closeDropdown}>
+               Expense Entry
+             </Link>
+           )}
+           {userRole === 'admin' && (
+             <Link to="/expense-summary" className={`navbar-link ${location.pathname === '/expense-summary' ? 'active' : ''}`} onClick={closeDropdown}>
+               Expense Summary
+             </Link>
+           )}
+           {userRole === 'admin' && (
+             <Link to="/change-password" className={`navbar-link ${location.pathname === '/change-password' ? 'active' : ''}`} onClick={closeDropdown}>
+               Change Password
+             </Link>
+           )}
            <button onClick={handleLogout} className="navbar-logout">
              Exit
            </button>
-         </div>
+        </div>
 
         <button className="navbar-toggle" onClick={toggleDropdown}>
           <span className="hamburger-line"></span>
@@ -81,24 +98,34 @@ function Navbar({ addToast }) {
              <Link to="/customer" className={`dropdown-link ${location.pathname === '/customer' ? 'active' : ''}`} onClick={closeDropdown}>
                Add Customer
              </Link>
-             <Link to="/staff" className={`dropdown-link ${location.pathname === '/staff' ? 'active' : ''}`} onClick={closeDropdown}>
-               Add Staff Member
-             </Link>
-             <Link to="/salary-update" className={`dropdown-link ${location.pathname === '/salary-update' ? 'active' : ''}`} onClick={closeDropdown}>
-               Salary Update
-             </Link>
+             {userRole === 'admin' && (
+               <Link to="/staff" className={`dropdown-link ${location.pathname === '/staff' ? 'active' : ''}`} onClick={closeDropdown}>
+                 Add Staff Member
+               </Link>
+             )}
+             {userRole === 'admin' && (
+               <Link to="/salary-update" className={`dropdown-link ${location.pathname === '/salary-update' ? 'active' : ''}`} onClick={closeDropdown}>
+                 Salary Update
+               </Link>
+             )}
              <Link to="/revenue" className={`dropdown-link ${location.pathname === '/revenue' ? 'active' : ''}`} onClick={closeDropdown}>
                Customer Entry
              </Link>
-             <Link to="/expense" className={`dropdown-link ${location.pathname === '/expense' ? 'active' : ''}`} onClick={closeDropdown}>
-               Expense Entry
-             </Link>
-             <Link to="/expense-summary" className={`dropdown-link ${location.pathname === '/expense-summary' ? 'active' : ''}`} onClick={closeDropdown}>
-               Expense Summary
-             </Link>
-             <Link to="/change-password" className={`dropdown-link ${location.pathname === '/change-password' ? 'active' : ''}`} onClick={closeDropdown}>
-               Change Password
-             </Link>
+             {userRole === 'admin' && (
+               <Link to="/expense" className={`dropdown-link ${location.pathname === '/expense' ? 'active' : ''}`} onClick={closeDropdown}>
+                 Expense Entry
+               </Link>
+             )}
+             {userRole === 'admin' && (
+               <Link to="/expense-summary" className={`dropdown-link ${location.pathname === '/expense-summary' ? 'active' : ''}`} onClick={closeDropdown}>
+                 Expense Summary
+               </Link>
+             )}
+             {userRole === 'admin' && (
+               <Link to="/change-password" className={`dropdown-link ${location.pathname === '/change-password' ? 'active' : ''}`} onClick={closeDropdown}>
+                 Change Password
+               </Link>
+             )}
              <button onClick={handleLogout} className="dropdown-logout">
                Logout
              </button>

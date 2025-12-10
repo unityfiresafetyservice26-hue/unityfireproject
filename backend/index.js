@@ -115,6 +115,38 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// ---------------- STAFF LOGIN API ----------------
+app.post('/api/staff-login', async (req, res) => {
+  console.log('👷 Staff login attempt');
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    const staffRef = db.collection('staff');
+    const snapshot = await staffRef.where('fullName', '==', username).get();
+
+    if (snapshot.empty) {
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+
+    const staffDoc = snapshot.docs[0];
+    const staffData = staffDoc.data();
+
+    if (staffData.password === password) {
+      res.status(200).json({ message: 'Login successful', role: 'staff', staffId: staffDoc.id });
+    } else {
+      res.status(401).json({ error: 'Invalid username or password' });
+    }
+
+  } catch (error) {
+    console.error('❌ Error during staff login:', error);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
 // ---------------- CHANGE PASSWORD API ----------------
 app.post('/api/change-password', async (req, res) => {
   console.log('🔑 Change password attempt');
@@ -205,9 +237,9 @@ app.post('/api/staff', async (req, res) => {
   console.log('👷 Adding staff member');
   console.log('DEBUG: Received request body:', req.body);
   try {
-    const { fullName, salary, joiningDate, salaryStatus } = req.body;
+    const { fullName, salary, joiningDate, password, salaryStatus } = req.body;
 
-    console.log('DEBUG: fullName:', fullName, 'salary:', salary, 'joiningDate:', joiningDate);
+    console.log('DEBUG: fullName:', fullName, 'salary:', salary, 'joiningDate:', joiningDate, 'password:', password ? '[REDACTED]' : 'not provided');
 
     if (!fullName) {
       console.log('DEBUG: Full name validation failed - fullName is empty');
@@ -222,6 +254,11 @@ app.post('/api/staff', async (req, res) => {
     if (!joiningDate || joiningDate === '') {
       console.log('DEBUG: Joining date validation failed - joiningDate is empty');
       return res.status(400).json({ error: 'Joining date is required' });
+    }
+
+    if (!password || password.length < 6) {
+      console.log('DEBUG: Password validation failed - password is empty or too short');
+      return res.status(400).json({ error: 'Password is required and must be at least 6 characters long' });
     }
 
     // Validate salary
@@ -249,6 +286,7 @@ app.post('/api/staff', async (req, res) => {
 
     const staffData = {
       fullName: fullName.trim(),
+      password: password, // Store the password
       salaryStatus: {}, // Always include empty salaryStatus map
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     };
@@ -339,6 +377,34 @@ app.delete('/api/staff/:id', async (req, res) => {
   } catch (error) {
     console.error('❌ Error deleting staff member:', error);
     res.status(500).json({ error: 'Failed to delete staff member' });
+  }
+});
+
+// ---------------- UPDATE STAFF PASSWORD API ----------------
+app.put('/api/staff/:id/password', async (req, res) => {
+  console.log('🔑 Updating staff password');
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ error: 'Staff ID is required' });
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+    }
+
+    await db.collection('staff').doc(id).update({
+      password: password,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    res.status(200).json({ message: 'Staff password updated successfully' });
+
+  } catch (error) {
+    console.error('❌ Error updating staff password:', error);
+    res.status(500).json({ error: 'Failed to update staff password' });
   }
 });
 

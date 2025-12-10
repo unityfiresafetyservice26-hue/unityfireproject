@@ -13,7 +13,9 @@ import Toast from './components/Toast';
 import './App.css';
 
 function LoginPage({ onLogin, addToast }) {
+  const [userType, setUserType] = useState('admin');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [loginMessage, setLoginMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -24,19 +26,30 @@ function LoginPage({ onLogin, addToast }) {
     setLoginMessage('');
 
     try {
-      // console.log('env:', import.meta.env.VITE_BASE_API);
-      const response = await fetch(`${import.meta.env.VITE_BASE_API}/api/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ password }),
-      });
+      let response;
+      if (userType === 'admin') {
+        response = await fetch(`${import.meta.env.VITE_BASE_API}/api/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ password }),
+        });
+      } else {
+        response = await fetch(`${import.meta.env.VITE_BASE_API}/api/staff-login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, password }),
+        });
+      }
+
       const data = await response.json();
       if (response.ok) {
         setLoginMessage('');
         addToast('Login successful!', 'success');
-        onLogin();
+        onLogin(userType, data.staffId);
       } else {
         addToast(data.error || 'Login failed', 'error');
         setLoginMessage(data.error || 'Login failed');
@@ -58,6 +71,35 @@ function LoginPage({ onLogin, addToast }) {
         </div>
 
         <form className="login-form" onSubmit={handleLoginSubmit}>
+          <div className="form-group">
+            <label htmlFor="userType">Login as</label>
+            <select
+              id="userType"
+              className="login-select"
+              value={userType}
+              onChange={(e) => setUserType(e.target.value)}
+              disabled={isLoading}
+            >
+              <option value="admin">Admin</option>
+              <option value="staff">Staff</option>
+            </select>
+          </div>
+
+          {userType === 'staff' && (
+            <div className="form-group">
+              <label htmlFor="username">Username</label>
+              <input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter your username"
+                required
+                disabled={isLoading}
+              />
+            </div>
+          )}
+
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <div style={{ position: 'relative' }}>
@@ -235,6 +277,7 @@ function CustomerPage() {
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState('admin');
   const [toasts, setToasts] = useState([]);
 
   // Session timeout duration: 8 hours (in milliseconds)
@@ -244,6 +287,7 @@ function App() {
     const checkLoginStatus = () => {
       const token = localStorage.getItem('token');
       const loginTime = localStorage.getItem('loginTime');
+      const role = localStorage.getItem('userRole') || 'admin';
 
       if (token && loginTime) {
         const currentTime = new Date().getTime();
@@ -251,11 +295,14 @@ function App() {
 
         if (sessionAge < SESSION_TIMEOUT) {
           setIsLoggedIn(true);
+          setUserRole(role);
         } else {
           // Session expired
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           localStorage.removeItem('loginTime');
+          localStorage.removeItem('userRole');
+          localStorage.removeItem('staffId');
           addToast('Session expired. Please login again.', 'info');
         }
       }
@@ -269,9 +316,14 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleLogin = () => {
+  const handleLogin = (role = 'admin', staffId = null) => {
     setIsLoggedIn(true);
+    setUserRole(role);
     localStorage.setItem('loginTime', new Date().getTime().toString());
+    localStorage.setItem('userRole', role);
+    if (staffId) {
+      localStorage.setItem('staffId', staffId);
+    }
   };
 
   const addToast = (message, type = 'info') => {
@@ -337,7 +389,7 @@ function App() {
         <Route
           path="/staff"
           element={
-            isLoggedIn ? (
+            isLoggedIn && userRole === 'admin' ? (
               <Staff addToast={addToast} />
             ) : (
               <Navigate to="/" replace />
@@ -347,7 +399,7 @@ function App() {
         <Route
           path="/salary-update"
           element={
-            isLoggedIn ? (
+            isLoggedIn && userRole === 'admin' ? (
               <SalaryUpdate addToast={addToast} />
             ) : (
               <Navigate to="/" replace />
@@ -367,7 +419,7 @@ function App() {
         <Route
           path="/expense"
           element={
-            isLoggedIn ? (
+            isLoggedIn && userRole === 'admin' ? (
               <Expense addToast={addToast} />
             ) : (
               <Navigate to="/" replace />
@@ -377,7 +429,7 @@ function App() {
         <Route
           path="/expense-summary"
           element={
-            isLoggedIn ? (
+            isLoggedIn && userRole === 'admin' ? (
               <ExpenseSummary addToast={addToast} />
             ) : (
               <Navigate to="/" replace />
@@ -387,7 +439,7 @@ function App() {
         <Route
           path="/change-password"
           element={
-            isLoggedIn ? (
+            isLoggedIn && userRole === 'admin' ? (
               <ChangePassword addToast={addToast} />
             ) : (
               <Navigate to="/" replace />
