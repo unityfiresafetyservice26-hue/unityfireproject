@@ -50,7 +50,7 @@ const db = admin.firestore();
 // CORS Middleware
 app.use((req, res, next) => {
   const allowedOrigins = [
-  'https://unityfireproject.vercel.app/',
+  'https://unityfireproject.vercel.app',
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:5175',
