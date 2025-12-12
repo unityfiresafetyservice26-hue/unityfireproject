@@ -76,6 +76,11 @@ body {
 .login-container {
   padding: 40px 30px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100%;
 }
 
 .login-header {
@@ -2571,12 +2576,18 @@ body {
 
 @media (max-width: 480px) {
   .App {
-    margin: 10px;
+    /* margin: 10px; */
     border-radius: 16px;
+    /* min-height: calc(100vh - 20px); */
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .login-container {
     padding: 30px 20px;
+    width: 100%;
+    max-width: none;
   }
 
   .login-header h1 {
@@ -2584,8 +2595,26 @@ body {
   }
 
   .dashboard-content {
-    padding: 20px 15px;
+    padding: 15px 10px;
     padding-top: 180px;
+  }
+
+  .dashboard-sections {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .dashboard-card {
+    padding: 20px 15px;
+  }
+
+  .stat-card {
+    padding: 15px;
+  }
+
+  .section-title {
+    font-size: 20px;
+    margin-bottom: 15px;
   }
 
   .navbar-brand h2 {
